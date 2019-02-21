@@ -5,6 +5,8 @@ let pulse_element
 
 // Filtering constants
 
+const detect_rate = 20 // times per second to sample audio
+
 const target_freq = 800
 
 const gamma = 0.5 // exponential time average
@@ -69,36 +71,33 @@ let time_end = Date.now()
 let letter = ''
 
 window.onload = function() {
-	
-    // UI elements
+	// UI elements
 	message_element = document.getElementById('message')
 	pulse_element = document.getElementById('pulse')
-    
+
 	// grab an audio context
-    const audio_ctx = new AudioContext();
-	
+	const audio_ctx = new AudioContext()
+
 	// ask for an audio input
-	navigator.mediaDevices.getUserMedia(
-	{
+	navigator.mediaDevices.getUserMedia({
 		"audio": {
 			"mandatory": {
-				"googEchoCancellation": "false",
-				"googAutoGainControl": "false",
-				"googNoiseSuppression": "false",
-				"googHighpassFilter": "false"
+			"googEchoCancellation": "false",
+			"googAutoGainControl": "false",
+			"googNoiseSuppression": "false",
+			"googHighpassFilter": "false",
 			},
-			"optional": []
+			"optional": [],
 		},
-	})
-	.then(stream => {
-		const source = audio_ctx.createMediaStreamSource(stream);
+	}).then(stream => {
+		const source = audio_ctx.createMediaStreamSource(stream)
 
 		const filter = audio_ctx.createBiquadFilter()
 		filter.type = 2; // Band pass
 		filter.frequency.value = target_freq
 		filter.Q.value = 32
 		filter.gain.value = 2
-		
+
 		source.connect(filter)
 
 		const analyser = audio_ctx.createAnalyser()
@@ -107,15 +106,12 @@ window.onload = function() {
 
 		source.connect(analyser)
 
-		setInterval(() => { detect(analyser) }, 1000 / 20)
-	})
-	.catch((err) => {
+		setInterval(() => { detect(analyser) }, 1000 / detect_rate)
+	}).catch(err => {
 		console.error('Could not get stream: ' + err)
 		console.error(err.name + ": " + err.message)
 	})
-
 }
-
 
 function detect(analyser) {
 	const freq_array = new Uint8Array(analyser.frequencyBinCount);
